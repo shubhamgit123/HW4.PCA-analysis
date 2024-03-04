@@ -1,0 +1,108 @@
+---
+title: "HW4 PCA analysis"
+author: "Shubham Bhargava"
+date: "2024-028-11"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r}
+library(readxl)
+News_Website_Dataset <- read_excel("News Website Dataset.xlsx")
+#View(News_Website_Dataset)
+
+# correlation  and coefficient B/W Total_revenue and Total Sessions
+correlation_coefficient2 <- cor(News_Website_Dataset$Total_revenue, News_Website_Dataset$Total_Sessions)
+print(correlation_coefficient2)
+
+plot(News_Website_Dataset$Total_Sessions, News_Website_Dataset$Total_revenue,
+     xlab = "Total Sessions", ylab = "Total Revenue",
+     main = "Scatter Plot of Total Revenue vs. Total Sessions")
+
+abline(lm(News_Website_Dataset$Total_revenue ~ News_Website_Dataset$Total_Sessions), col = "green")
+
+```
+```{r}
+
+correlation_coefficient <- cor(News_Website_Dataset$Total_revenue, News_Website_Dataset$Avg_Session_Duration)
+
+plot(News_Website_Dataset$Avg_Session_Duration, News_Website_Dataset$Total_revenue,
+     xlab = "Average Session Duration", ylab = "Total Revenue",
+     main = "Scatter Plot of Total Revenue vs. Avg Session Duration")
+
+abline(lm(News_Website_Dataset$Total_revenue ~ News_Website_Dataset$Avg_Session_Duration), col = "purple")
+
+print(paste("Correlation Coefficient between Total Revenue and Avg Session Duration:", correlation_coefficient))
+
+```
+
+
+### Homework 4
+
+<p>1 Decide how many Principal Components (PCs) you want to keep and why</p>
+<p>2 Explain the variate representation each PCs</p>
+<p>3 Perform some visualization using PCs.</p>
+
+```{r}
+News_Website_Dataset_num <- read_excel("News Website Dataset.xlsx", range = cell_cols("F:J"))
+cor(News_Website_Dataset_num[-1])
+News_Website_Dataset_num_pca <- prcomp(News_Website_Dataset_num[,-1],scale=TRUE)
+News_Website_Dataset_num_pca
+summary(News_Website_Dataset_num_pca)
+
+
+(eigen_News_Website_Dataset <- News_Website_Dataset_num_pca$sdev^2)
+names(eigen_News_Website_Dataset) <- paste("PC",1:4,sep="")
+eigen_News_Website_Dataset
+sumlambdas <- sum(eigen_News_Website_Dataset)
+sumlambdas
+propvar <- eigen_News_Website_Dataset/sumlambdas
+propvar
+
+cumvar_News_Website_Dataset <- cumsum(propvar)
+cumvar_News_Website_Dataset
+matlambdas <- rbind(eigen_News_Website_Dataset,propvar,cumvar_News_Website_Dataset)
+rownames(matlambdas) <- c("Eigenvalues","Prop. variance","Cum. prop. variance")
+round(matlambdas,4)
+summary(News_Website_Dataset_num_pca)
+News_Website_Dataset_num_pca$rotation
+print(News_Website_Dataset_num_pca)
+
+News_Website_Dataset_num_pca$x
+```
+
+```{r}
+library(FactoMineR)
+
+encoded_data <- model.matrix(~Device_Category - 1, data = News_Website_Dataset_num)
+numerical_data <- cbind(News_Website_Dataset_num[, -which(names(News_Website_Dataset_num) == "Device_Category")], encoded_data)
+
+#PCA
+pca_result <- prcomp(numerical_data, scale = TRUE)
+
+# Scree plot
+plot(pca_result$sdev^2, type = "b", xlab = "Principal Component", ylab = "Variance Explained")
+
+loadings <- pca_result$rotation
+print(loadings)
+
+# Data projection onto first two PCs
+data_projection <- as.data.frame(pca_result$x[, 1:2])
+
+# Data projection onto next two PCs
+data_projection2 <- as.data.frame(pca_result$x[, 3:4])
+
+# Plot
+plot(data_projection$PC1, data_projection$PC2, 
+     xlab = "PC1", ylab = "PC2", 
+     main = "Data Visualization using PCs - 1")
+
+# Plot
+plot(data_projection2$PC3, data_projection2$PC4, col = "blue",
+     xlab = "PC3", ylab = "PC4", 
+     main = "Data Visualization using PCs - 2")
+```
